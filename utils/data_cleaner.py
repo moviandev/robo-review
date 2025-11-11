@@ -98,9 +98,6 @@ def data_cleaner(df_list, source_names):
     final_columns_order = [col for col in all_final_cols if col in merged_df.columns]
     final_columns_order.append('data_source')
     
-    # Remove duplicates if any (e.g. 'review_username')
-    final_columns_order = list(dict.fromkeys(final_columns_order)) 
-    
     merged_df = merged_df[final_columns_order]
 
     return merged_df
