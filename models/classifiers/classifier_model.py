@@ -375,7 +375,7 @@ def predict_full_dataset(df, model, vectorizer, model_type='baseline'):
     print(f"Predicted sentiment distribution:")
     print(df['predicted_sentiment'].value_counts())
     
-    return df_with_predictions
+    return df
 # ============================================================================
 # PART 5: RANKING SYSTEM
 # ============================================================================
@@ -505,3 +505,57 @@ def visualize_rankings(top_products):
     
     plt.tight_layout()
     plt.show()
+
+# ============================================================================
+# MAIN EXECUTION PIPELINE
+# ============================================================================
+
+def run_complete_pipeline(df):
+    """
+    Execute the complete pipeline from data prep to ranking
+    
+    Args:
+        df: DataFrame with columns ['product_name', 'categories', 'review_rating',
+                                     'review_text', 'review_title']
+    """
+    print("\n" + "=" * 80)
+    print("STARTING COMPLETE PIPELINE")
+    print("=" * 80)
+    
+    # Step 1: Prepare data
+    df = prepare_data(df)
+    
+    # Step 2: Create train-test split
+    X_train, X_test, y_train, y_test = create_stratified_split(df)
+    
+    # Step 3: Train model
+    # Option 1: Train baseline model
+    lr_model, vectorizer, y_pred_lr, y_pred_proba_lr = train_baseline_model(
+        X_train, y_train, X_test, y_test
+    )
+    
+    # Option 2: DistilBERT Model
+    # Uncomment if you have transformers installed and GPU available
+    # distilbert_model, tokenizer, y_pred_bert, y_pred_proba_bert = train_distilbert_model(
+    #     X_train, y_train, X_test, y_test
+    # )
+    
+    # Step 4: Predict on full dataset
+    df_with_predictions = predict_full_dataset(df, lr_model, vectorizer, model_type='baseline')
+    
+    # Step 5: Calculate product scores
+    #product_stats = calculate_product_scores(df)
+    
+    # Step 6: Get top products per category
+    #top_products = get_top_products(product_stats, top_n=3)
+    
+    # Step 7: Visualize
+    #visualize_rankings(top_products)
+    
+    print("\n" + "=" * 80)
+    print("PIPELINE COMPLETE!")
+    print("=" * 80)
+    
+    return df_with_predictions #df, product_stats, top_products
+
+
