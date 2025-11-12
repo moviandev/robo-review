@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np # Importado para pd.NA (se necessário, mas já é nativo)
+import numpy as np
 
 # --- Configuration ---
 COLUMN_MAPPING = {
