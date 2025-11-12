@@ -3,6 +3,7 @@ import pandas as pd
 # --- Configuration ---
 COLUMN_MAPPING = {
     # (MUST) Columns
+    'id': 'id',
     'name': 'product_name',
     'categories': 'categories',
     'reviews.rating': 'review_rating',
@@ -20,6 +21,7 @@ COLUMN_MAPPING = {
 }
 
 MUST_HAVE_COLUMNS = [
+    'id',
     'product_name',
     'categories',
     'review_rating',
@@ -30,7 +32,6 @@ MUST_HAVE_COLUMNS = [
 
 def handle_df(df, source_name):
     print(f"Processing DataFrame from '{source_name}'...")
-    
     # 1. Find which of our target columns *actually exist* in this file
     original_cols_to_keep = [col for col in COLUMN_MAPPING.keys() if col in df.columns]
     
@@ -46,9 +47,36 @@ def handle_df(df, source_name):
     
     # 4. Add the source identifier
     df_cleaned['data_source'] = source_name
-    
+
     print(f"Finished processing '{source_name}'. Found {len(df_cleaned)} rows.")
     return df_cleaned
+
+def fill_missing_product_names(df, id_col='id', name_col='product_name'):
+    """
+    Fills missing product names in a DataFrame using the product_id as a unique key.
+    
+    Parameters:
+        df (pd.DataFrame): DataFrame containing at least 'product_id' and 'product_name' columns.
+        id_col (str): Name of the product ID column.
+        name_col (str): Name of the product name column.
+    
+    Returns:
+        pd.DataFrame: DataFrame with missing product names filled.
+    """
+    # Create a mapping of unique IDs to known names (excluding nulls)
+    id_to_name = (
+        df.dropna(subset=[name_col])
+          .drop_duplicates(subset=[id_col])
+          .set_index(id_col)[name_col]
+          .to_dict()
+    )
+    
+    # Fill missing product names using the mapping
+    df[name_col] = df.apply(
+        lambda row: id_to_name.get(row[id_col], row[name_col]), axis=1
+    )
+    
+    return df
 
 def data_cleaner(df_list, source_names):
     all_cleaned_dfs = []
@@ -82,7 +110,8 @@ def data_cleaner(df_list, source_names):
     
     # 4. Final cleanup: Drop rows where (MUST) data is missing
     original_count = len(merged_df)
-    merged_df = merged_df.dropna(subset=MUST_HAVE_COLUMNS)
+    fill_missing_product_names(merged_df)
+    #merged_df = merged_df.dropna(subset=MUST_HAVE_COLUMNS)
     new_count = len(merged_df)
     
     print(f"Dropped {original_count - new_count} rows due to missing (MUST HAVE) data.")

@@ -79,7 +79,7 @@ def run_sentiment_pipeline():
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, 'sentiment_analysis_results.csv')
 
-    final_df_sentiment_analysis = df[['product_name', 'review_rating', 'review_text', 'review_title', 
+    final_df_sentiment_analysis = df[['id', 'product_name', 'review_rating', 'review_text', 'review_title', 
                    'sentiment', 'predicted_sentiment', 'data_source']]
     final_df_sentiment_analysis.to_csv(output_path, index=False)
 
