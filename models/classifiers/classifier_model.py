@@ -551,7 +551,17 @@ def run_complete_pipeline(df):
     
     # Step 7: Visualize
     #visualize_rankings(top_products)
+
+    output_dir = '../../../results'
+    output_filename = 'sentiment_analysis_linear_regression.csv'
+    output_path = os.path.join(output_dir, output_filename)
     
+    # Cria a pasta 'results' se ela não existir
+    os.makedirs(output_dir, exist_ok=True)
+    
+    df_with_predictions.to_csv(output_path, index=False)
+    print(f"\nSaved full predictions to: {output_path}")
+
     print("\n" + "=" * 80)
     print("PIPELINE COMPLETE!")
     print("=" * 80)
