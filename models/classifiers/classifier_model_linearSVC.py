@@ -67,7 +67,7 @@ def run_sentiment_pipeline():
     plt.ylabel('True Label', fontsize=12)
     plt.xlabel('Predicted Label', fontsize=12)
     plt.yticks(rotation=0)
-    plt.savefig('confusion_matrix_model_linearSVC.png')
+    plt.savefig('../../../results/confusion_matrix_model_linearSVC.png')
     plt.close()
     print("Saved Confusion Matrix: 'confusion_matrix.png'")
     
