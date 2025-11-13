@@ -1,8 +1,10 @@
 import pandas as pd
+import numpy as np
 
 # --- Configuration ---
 COLUMN_MAPPING = {
     # (MUST) Columns
+    'id': 'id',
     'name': 'product_name',
     'categories': 'categories',
     'reviews.rating': 'review_rating',
@@ -20,6 +22,7 @@ COLUMN_MAPPING = {
 }
 
 MUST_HAVE_COLUMNS = [
+    'id',
     'product_name',
     'categories',
     'review_rating',
@@ -29,24 +32,18 @@ MUST_HAVE_COLUMNS = [
 
 
 def handle_df(df, source_name):
+    # Lógica inalterada
     print(f"Processing DataFrame from '{source_name}'...")
-    
-    # 1. Find which of our target columns *actually exist* in this file
     original_cols_to_keep = [col for col in COLUMN_MAPPING.keys() if col in df.columns]
     
     if not original_cols_to_keep:
          print(f"Warning: No matching columns found in '{source_name}'. Skipping.")
          return pd.DataFrame()
 
-    # 2. Select *only* those columns and create a copy
     df_cleaned = df[original_cols_to_keep].copy()
-
-    # 3. Rename the columns to our clean schema
     df_cleaned = df_cleaned.rename(columns=COLUMN_MAPPING)
-    
-    # 4. Add the source identifier
     df_cleaned['data_source'] = source_name
-    
+
     print(f"Finished processing '{source_name}'. Found {len(df_cleaned)} rows.")
     return df_cleaned
 
@@ -71,30 +68,51 @@ def data_cleaner(df_list, source_names):
     print("\nMerging all datasets...")
     merged_df = pd.concat(all_cleaned_dfs, ignore_index=True)
     print(f"Total rows after merge: {len(merged_df)}")
+    
+    if 'product_name' in merged_df.columns:
+        initial_nan_count = merged_df['product_name'].isna().sum()
+        
+        merged_df['product_name'] = merged_df.groupby('id')['product_name'].transform(
+            lambda x: x.fillna(x.mode()[0] if not x.mode().empty else pd.NA)
+        )
+        
+        final_nan_count = merged_df['product_name'].isna().sum()
+        
+        if final_nan_count > 0:
+            merged_df['product_name'] = merged_df['product_name'].fillna('Unknown Product')
+            print(f"Filled {initial_nan_count - final_nan_count} product names based on ID.")
+            print(f"Filled remaining {final_nan_count} NA names with 'Unknown Product'.")
+        else:
+            print(f"Filled {initial_nan_count} product names based on ID.")
 
-    # 3. Remove duplicate reviews
-    # We define a duplicate as a review with the same product, rating, title, AND text.
-    # We use the 'MUST_HAVE_COLUMNS' as they are the most reliable identifiers.
+    else:
+        print("Warning: 'product_name' column not found after merge. Skipping name filling.")
+        
+    # 3. Remove duplicate reviews (Lógica inalterada)
     original_count = len(merged_df)
     merged_df = merged_df.drop_duplicates(subset=MUST_HAVE_COLUMNS, keep='first')
     new_count = len(merged_df)
     print(f"Dropped {original_count - new_count} duplicate reviews.")
     
-    # 4. Final cleanup: Drop rows where (MUST) data is missing
+    # 4. Final cleanup: Drop rows where (MUST) data is missing (Lógica inalterada)
     original_count = len(merged_df)
+    
+    if 'review_rating' in merged_df.columns:
+        merged_df['review_rating'] = pd.to_numeric(merged_df['review_rating'], errors='coerce')
+        
     merged_df = merged_df.dropna(subset=MUST_HAVE_COLUMNS)
     new_count = len(merged_df)
     
     print(f"Dropped {original_count - new_count} rows due to missing (MUST HAVE) data.")
     print(f"Final merged dataset has {new_count} rows.")
     
-    # 5. Ensure all columns from the mapping are present
+    # 5. Ensure all columns from the mapping are present (Lógica inalterada)
     all_final_cols = list(COLUMN_MAPPING.values())
     for new_col_name in all_final_cols:
         if new_col_name not in merged_df.columns:
             merged_df[new_col_name] = pd.NA
             
-    # 6. Re-order columns for consistency
+    # 6. Re-order columns for consistency (Lógica inalterada)
     final_columns_order = [col for col in all_final_cols if col in merged_df.columns]
     final_columns_order.append('data_source')
     
