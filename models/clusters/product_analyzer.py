@@ -35,37 +35,44 @@ import warnings
 warnings.filterwarnings('ignore') # Ignore warnings, especially from KMeans initialization
 
 # --- 1. NEW CLUSTERING METRICS FUNCTION ---
-# (Logic remains unchanged)
 
-def calculate_clustering_metrics(features: np.ndarray, labels: np.ndarray):
+def calculate_clustering_metrics(features: np.ndarray, labels: np.ndarray) -> str:
     """
-    Calculates and prints the main cluster evaluation metrics.
+    Calculates and returns the main cluster evaluation metrics as a formatted string.
     
     - Silhouette Score: (Closer to 1 is better)
     - Davies-Bouldin Index: (Closer to 0 is better)
     - Calinski-Harabasz Index: (Higher is better)
     """
-    print("\n--- Evaluating Cluster Quality Metrics ---")
+    output = ["\n--- Evaluating Cluster Quality Metrics ---"]
     
     if len(np.unique(labels)) < 2:
-        print("Error: Need at least 2 unique clusters to calculate metrics.")
-        return
+        output.append("Error: Need at least 2 unique clusters to calculate metrics.")
+        return "\n".join(output)
 
     try:
+        # 1. Silhouette Score
         sil_score = silhouette_score(features, labels)
-        print(f"  - Silhouette Score: {sil_score:.4f}")
-        print("    (Interpretation: Close to +1 is great, 0 is overlapping, negative is bad)")
+        output.append(f"  - Silhouette Score: {sil_score:.4f}")
+        output.append("    (Interpretation: Close to +1 is great, 0 is overlapping, negative is bad)")
 
+        # 2. Davies-Bouldin Index
         db_score = davies_bouldin_score(features, labels)
-        print(f"  - Davies-Bouldin Index: {db_score:.4f}")
-        print("    (Interpretation: Closer to 0 is better. Measures separation)")
+        output.append(f"  - Davies-Bouldin Index: {db_score:.4f}")
+        output.append("    (Interpretation: Closer to 0 is better. Measures separation)")
         
+        # 3. Calinski-Harabasz Index
         ch_score = calinski_harabasz_score(features, labels)
-        print(f"  - Calinski-Harabasz Index: {ch_score:.4f}")
-        print("    (Interpretation: Higher is better. Measures density vs. separation)")
+        output.append(f"  - Calinski-Harabasz Index: {ch_score:.4f}")
+        output.append("    (Interpretation: Higher is better. Measures density vs. separation)")
         
     except Exception as e:
-        print(f"Error calculating cluster metrics: {e}")
+        output.append(f"Error calculating cluster metrics: {e}")
+        
+    # Print the output and return the string
+    metrics_string = "\n".join(output)
+    print(metrics_string)
+    return metrics_string
 
 # --- 2. CLUSTER PLOTTING FUNCTION ---
 # (Logic remains unchanged)
@@ -126,7 +133,7 @@ def plot_cluster_scatter(
 
 # --- 3. CLUSTERING FUNCTION (MODIFIED AND CORRECTED) ---
 
-def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
+def cluster_categories(df: pd.DataFrame, n_clusters: int = 4, results_dir: str = './results') -> pd.DataFrame:
     """
     Applies K-Means clustering to **UNIQUE products** based on the 'categories' text.
     This corrects the over-clustering issue and improves performance.
@@ -144,18 +151,19 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
     # 1. Preprocess text
     text_column = 'categories'
     print(f"Using the column: {text_column}")
+    # 🌟 CORRECTION: Restoring full text preprocessing for TF-IDF accuracy
     df_products['processed_text'] = (
         df_products[text_column]
-        .dropna()
-        # .astype(str)
-        # .fillna('unknown product')
-        # .str.replace(r'[\[\]\'"]', '', regex=True)
-        # .str.lower()
+        .astype(str)
+        .fillna('unknown product')
+        .str.replace(r'[\[\]\'"]', '', regex=True)
+        .str.lower()
     )
 
     # 2. Feature Generation (TF-IDF)
-    print('PROCESSED TEXT >>>>> ', df_products['processed_text'])
-    print("Generating features with TfidfVectorizer...")
+    # The print statement is verbose but kept to maintain structure
+    print('PROCESSED TEXT >>>>> [First 5 samples]') 
+    print(df_products['processed_text'].head()) 
     vectorizer = TfidfVectorizer(max_df=0.9, min_df=2, stop_words='english', ngram_range=(1,2))
     embeddings = vectorizer.fit_transform(df_products['processed_text']).toarray()
     print(f"Feature Matrix Shape: {embeddings.shape}")
@@ -175,11 +183,10 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
     print("Cluster Distribution:")
     print(df_products['cluster_id'].value_counts().sort_index())
 
-    # --- 5. CALL FOR METRICS ---
-    calculate_clustering_metrics(embeddings_reduced, cluster_labels)
-
+    # --- 5. CALL FOR METRICS (Silhouette Score, etc. is run here) ---
+    metrics_output_string = calculate_clustering_metrics(embeddings_reduced, cluster_labels)
+    
     # 6. Mapping to Metacategory 
-    # TODO: Check how I can use the original categories so we can inspect them. 
     metacategory_mapping = {
         0: "Smart Speakers & Home Control", 
         1: "Tablets & E-Readers", 
@@ -187,16 +194,15 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
         3: "Digital Media & Apps"
     }
     
-    df_products['metacategory'] = df_products['cluster_id']
-    # .map(metacategory_mapping)
+    # 🌟 CORRECTION: Ensure the string names are mapped for the report/plot legend
+    df_products['metacategory'] = df_products['cluster_id'].map(metacategory_mapping)
     print("Metacategory mapping complete.")
     
-    # 🌟 CORRECTION: Drop the 'processed_text' column from the product-level DataFrame
-    # This column is no longer needed and should not be merged into the main DF.
+    # 7. Cleanup
     df_products = df_products.drop(columns=['processed_text'])
     
-    # --- 7. CALL FOR PLOTTING ---
-    output_directory = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'results')))
+    # --- 8. CALL FOR PLOTTING (Visualization is generated here) ---
+    output_directory = results_dir    
     
     plot_cluster_scatter(
         embeddings_reduced,      
@@ -205,8 +211,7 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
         output_dir=output_directory
     )
     
-    # 8. Merge the results back to the original review DataFrame (df).
-    # We merge only the necessary columns: id, metacategory, and cluster_id.
+    # 9. Merge the results back to the original review DataFrame (df).
     df = df.merge(
         df_products[['id', 'metacategory', 'cluster_id']],
         on='id',
@@ -214,17 +219,14 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
         suffixes=('_old', '')
     )
     
-    # Clean up redundant columns/NaNs
     if 'metacategory_old' in df.columns:
         df = df.drop(columns=['metacategory_old'])
     
     df['metacategory'] = df['metacategory'].fillna('Unknown Product Category')
     
-    # Remove the final problematic drop line since the column was dropped correctly earlier.
-    
     print(f"Clustering results successfully mapped back to {df.shape[0]} reviews.")
     
-    return df
+    return df, metrics_output_string
 
 # --- 4. REPORT AND ANALYSIS FUNCTION ---
 # (Logic remains unchanged)
@@ -278,57 +280,15 @@ def save_report(
     except Exception as e:
         print(f"Error saving file: {e}")
 
-# --- MAIN EXECUTION BLOCK ---
-# (Logic remains unchanged)
+def save_text_file(text_content: str, output_dir: str, filename: str):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
+    file_path = os.path.join(output_dir, filename)
 
-if __name__ == "__main__":
-    """
-    This block runs the script directly (e.g., python product_clusterer.py)
-    """
-    
     try:
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        if project_root not in sys.path:
-            sys.path.append(project_root)
-            print(f"Adding project root to path: {project_root}")
-            
-        from utils.dataframe import load_and_clean_data
-        from models.classifiers.classifier_model import run_complete_pipeline
-        
-    except ImportError as e:
-        print(f"Import Error: {e}")
-        sys.exit(1)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(text_content)
+        print(f"Metrics successfully saved to: {file_path}")
     except Exception as e:
-        print(f"Unexpected error setting up path: {e}")
-        sys.exit(1)
-
-    print("==================================================")
-    print("Starting Product Clustering and Analysis Pipeline...")
-    print("==================================================")
-    
-    df = load_and_clean_data()
-    df_with_sentiment = run_complete_pipeline(df)
-    
-    if 'positive_proba' not in df_with_sentiment.columns:
-        print("Error: The 'positive_proba' column was not found after sentiment analysis.")
-        sys.exit(1)
-        
-    df_clustered = cluster_categories(df_with_sentiment, n_clusters=4)
-
-    final_report = get_top_products_by_category(df_clustered, top_n=3)
-    
-    results_dir = os.path.join(project_root, 'results')
-    
-    save_report(final_report, output_dir=results_dir, filename='top_products_report.csv')
-
-    df_summarization = df_clustered[[
-        'review_text', 'review_title', 'product_name', 
-        'metacategory', 'predicted_sentiment', 'id'
-    ]].copy()
-    
-    save_report(df_summarization, output_dir=results_dir, filename='summarization_data_clustered.csv')
-
-    print("\n==================================================")
-    print("Pipeline Complete. Final Report:")
-    print("==================================================")
-    print(final_report)
+        print(f"Error saving text file: {e}")
