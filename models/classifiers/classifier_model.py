@@ -510,7 +510,7 @@ def visualize_rankings(top_products):
 # MAIN EXECUTION PIPELINE
 # ============================================================================
 
-def run_complete_pipeline(df):
+def run_complete_pipeline(df, path):
     """
     Execute the complete pipeline from data prep to ranking
     
@@ -552,7 +552,7 @@ def run_complete_pipeline(df):
     # Step 7: Visualize
     #visualize_rankings(top_products)
 
-    output_dir = '../../../results'
+    output_dir = path
     output_filename = 'sentiment_analysis_linear_regression.csv'
     output_path = os.path.join(output_dir, output_filename)
     

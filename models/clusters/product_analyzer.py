@@ -146,13 +146,15 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
     print(f"Using the column: {text_column}")
     df_products['processed_text'] = (
         df_products[text_column]
-        .astype(str)
-        .fillna('unknown product')
-        .str.replace(r'[\[\]\'"]', '', regex=True)
-        .str.lower()
+        .dropna()
+        # .astype(str)
+        # .fillna('unknown product')
+        # .str.replace(r'[\[\]\'"]', '', regex=True)
+        # .str.lower()
     )
 
     # 2. Feature Generation (TF-IDF)
+    print('PROCESSED TEXT >>>>> ', df_products['processed_text'])
     print("Generating features with TfidfVectorizer...")
     vectorizer = TfidfVectorizer(max_df=0.9, min_df=2, stop_words='english', ngram_range=(1,2))
     embeddings = vectorizer.fit_transform(df_products['processed_text']).toarray()
@@ -177,6 +179,7 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
     calculate_clustering_metrics(embeddings_reduced, cluster_labels)
 
     # 6. Mapping to Metacategory 
+    # TODO: Check how I can use the original categories so we can inspect them. 
     metacategory_mapping = {
         0: "Smart Speakers & Home Control", 
         1: "Tablets & E-Readers", 
@@ -184,7 +187,8 @@ def cluster_categories(df: pd.DataFrame, n_clusters: int = 4) -> pd.DataFrame:
         3: "Digital Media & Apps"
     }
     
-    df_products['metacategory'] = df_products['cluster_id'].map(metacategory_mapping)
+    df_products['metacategory'] = df_products['cluster_id']
+    # .map(metacategory_mapping)
     print("Metacategory mapping complete.")
     
     # 🌟 CORRECTION: Drop the 'processed_text' column from the product-level DataFrame
