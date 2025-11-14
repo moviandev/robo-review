@@ -20,23 +20,7 @@ Product Ranking: Implements a multi-factor ranking system using a weighted formu
 - Review count.
 
 AI Synthesis (Gemini API): Takes the final ranked products and samples of their corresponding positive and negative reviews to generate a cohesive, market-analyst-style recommendation article using the gemini-2.5-flash model.
-```
-📁 Project Structure
-├── main.ipynb                  # Main execution notebook (run this first!)
-├── load_data.py                # Helper: Loads raw datasets from Hugging Face.
-├── dataframe.py                # Helper: Orchestrates loading and cleaning of all dataframes.
-├── data_cleaner.py             # Core: Cleans, merges, and de-duplicates raw data.
-├── classifier_model.py         # Core: Sentiment analysis (data prep, LR model training, prediction).
-├── product_analyzer.py         # Core: K-Means clustering, cluster metrics, and top product ranking.
-├── summarization_gemini.py     # Core: Prompts Gemini API to generate the final recommendation article.
-├── .env.example                # Example file for environment variables.
-└── /results/                   # Output directory (created by the pipeline)
-    ├── sentiment_analysis_linear_regression.csv 
-    ├── top_products_report.csv
-    ├── summarization_data_clustered.csv
-    ├── final_recommendation_article.txt
-    └── cluster_visualization.png
-```
+
 ## 🛠️ Setup and Installation
 1. Prerequisites
 You need a Python environment (e.g., Conda, virtualenv) and a Google Gemini API Key.
