@@ -72,16 +72,19 @@ def data_cleaner(df_list, source_names):
     if 'product_name' in merged_df.columns:
         initial_nan_count = merged_df['product_name'].isna().sum()
         
+        # Logic to fill NaNs based on product ID (remains unchanged)
         merged_df['product_name'] = merged_df.groupby('id')['product_name'].transform(
             lambda x: x.fillna(x.mode()[0] if not x.mode().empty else pd.NA)
         )
         
         final_nan_count = merged_df['product_name'].isna().sum()
         
+        # MODIFICATION: Replace 'Unknown Product' assignment with a simple print statement
         if final_nan_count > 0:
-            merged_df['product_name'] = merged_df['product_name'].fillna('Unknown Product')
+            # We skip the merged_df['product_name'].fillna('Unknown Product') line.
+            # The remaining NaNs will be handled in step 4 (dropna(subset=MUST_HAVE_COLUMNS)).
             print(f"Filled {initial_nan_count - final_nan_count} product names based on ID.")
-            print(f"Filled remaining {final_nan_count} NA names with 'Unknown Product'.")
+            print(f"Remaining {final_nan_count} NA names will be dropped in the final cleanup.")
         else:
             print(f"Filled {initial_nan_count} product names based on ID.")
 
