@@ -10,20 +10,17 @@ Data Ingestion & Cleaning: Loads and merges three raw CSV datasets, handling mis
 
 Sentiment Analysis (Baseline Model): Trains a Logistic Regression model using TF-IDF features to classify reviews into 'positive', 'neutral', or 'negative' sentiment.
 
-Product Clustering: Uses K-Means clustering on product categories (features reduced via PCA) to group similar products into broad Metacategories (e.g., "Smart Speakers," "Tablets").
+Product Clustering: Uses K-Means clustering on product categories (features reduced via PCA) to group similar products into broad Metacategories (e.g., "Smart Speakers", "Tablets").
 
 Product Ranking: Implements a multi-factor ranking system using a weighted formula that considers:
 
-Percentage of positive reviews.
-
-Bayesian average rating.
-
-Average predicted positive probability.
-
-Review count.
+- Percentage of positive reviews.
+- Bayesian average rating.
+- Average predicted positive probability.
+- Review count.
 
 AI Synthesis (Gemini API): Takes the final ranked products and samples of their corresponding positive and negative reviews to generate a cohesive, market-analyst-style recommendation article using the gemini-2.5-flash model.
-
+```
 📁 Project Structure
 ├── main.ipynb                  # Main execution notebook (run this first!)
 ├── load_data.py                # Helper: Loads raw datasets from Hugging Face.
@@ -39,7 +36,7 @@ AI Synthesis (Gemini API): Takes the final ranked products and samples of their 
     ├── summarization_data_clustered.csv
     ├── final_recommendation_article.txt
     └── cluster_visualization.png
-
+```
 ## 🛠️ Setup and Installation
 1. Prerequisites
 You need a Python environment (e.g., Conda, virtualenv) and a Google Gemini API Key.
